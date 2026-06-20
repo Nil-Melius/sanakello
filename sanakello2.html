@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Anchored Typography Clock (Finnish)</title>
+    <style>
+        /* ========================================================
+           SÄÄDÄ VÄREJÄ JA RIVIVÄLEJÄ TÄSTÄ:
+           ======================================================== */
+        :root {
+            /* Värit */
+            --taustavari: #0b0f19;    /* Syvä yönsininen tausta */
+            --tunnit-vari: #eeeef0;   /* Tuntisanojen väri (Valkoinen) */
+            --minuutit-vari: #38bdf8; /* Minuuttisanojen väri (Raikas sininen) */
+            --sekunnit-vari: #1A4A73; /* Sekunttisanojen väri (Tumma harmaansininen) */
+
+            /* Rivivälien hienosäätö suomen kielelle */
+            --ylaosan-rivivali: 0.9;  /* Tuntien ja minuuttien välinen tiiviys (huomioi Ä-pisteet) */
+            --sekuntien-etaisyys: 17px; /* Väli pikseleinä minuuttien alapuolella sekunneille */
+        }
+        /* ======================================================== */
+
+        body {
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--taustavari);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lohko {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85vw;
+            max-width: 65vh; 
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -0.05em;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* YLÄOSA: Pohja lukittu keskelle. Kasvaa vapaasti ylöspäin kun minuutti vaihtuu. */
+        .ylaosa {
+            bottom: 50%;
+            justify-content: flex-end;
+            line-height: var(--ylaosan-rivivali);
+        }
+
+        /* ALAOSA: Katkaistu alkamaan keskeltä ja kasvaa vain alaspäin. */
+        .alaosa {
+            top: 50%;
+            justify-content: flex-start;
+            margin-top: var(--sekuntien-etaisyys);
+        }
+
+        .rivi-paketti {
+            width: 100%;
+            text-align: center;
+            overflow: visible;
+        }
+
+        .rivi {
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        #tunnit, #minuutit {
+            line-height: inherit;
+        }
+
+        #sekunnit {
+            line-height: 0.7;
+        }
+
+        #tunnit { color: var(--tunnit-vari); }
+        #minuutit { color: var(--minuutit-vari); }
+        #sekunnit { color: var(--sekunnit-vari); }
+    </style>
+</head>
+<body>
+
+    <div class="lohko ylaosa">
+        <div class="rivi-paketti"><span class="rivi" id="tunnit">...</span></div>
+        <div class="rivi-paketti"><span class="rivi" id="minuutit">...</span></div>
+    </div>
+
+    <div class="lohko alaosa">
+        <div class="rivi-paketti"><span class="rivi" id="sekunnit">...</span></div>
+    </div>
+
+    <script>
+        const ykkoset = ['', 'yksi', 'kaksi', 'kolme', 'neljä', 'viisi', 'kuusi', 'seitsemän', 'kahdeksan', 'yhdeksän'];
+        const teinit = ['kymmenen', 'yksitoista', 'kaksitoista', 'kolmetoista', 'neljätoista', 'viisitoista', 'kuusitoista', 'seitsemäntoista', 'kahdeksantoista', 'yhdeksäntoista'];
+        const kymmenet = ['', 'kymmenen', 'kaksikymmentä', 'kolmekymmentä', 'neljäkymmentä', 'viisikymmentä'];
+
+        function lukuSanaksi(n) {
+            if (n === 0) return 'nolla';
+            if (n < 10) return ykkoset[n];
+            if (n < 20) return teinit[n - 10];
+            
+            let kymmenosa = Math.floor(n / 10);
+            let ykkososa = n % 10;
+            return kymmenet[kymmenosa] + ykkoset[ykkososa];
+        }
+
+        function paivitaKello() {
+            const nyt = new Date();
+            const tunnit = nyt.getHours();
+            const minuutit = nyt.getMinutes();
+            const sekunnit = nyt.getSeconds();
+
+            const tuntiSana = lukuSanaksi(tunnit);
+            const minuuttiSana = minuutit === 0 ? 'nolla' : lukuSanaksi(minuutit);
+            const sekunttiSana = sekunnit === 0 ? 'nolla' : lukuSanaksi(sekunnit);
+
+            const elTunnit = document.getElementById('tunnit');
+            const elMinuutit = document.getElementById('minuutit');
+            const elSekunnit = document.getElementById('sekunnit');
+            
+            const tavoiteLeveys = document.querySelector('.lohko').offsetWidth;
+
+            elTunnit.textContent = tuntiSana;
+            elMinuutit.textContent = minuuttiSana;
+            elSekunnit.textContent = sekunttiSana;
+
+            function laskeKoko(el) {
+                el.style.fontSize = '100px';
+                const nykyinenLeveys = el.getBoundingClientRect().width;
+                return (tavoiteLeveys / nykyinenLeveys) * 100;
+            }
+
+            elTunnit.style.fontSize = laskeKoko(elTunnit) + 'px';
+            elMinuutit.style.fontSize = laskeKoko(elMinuutit) + 'px';
+            elSekunnit.style.fontSize = laskeKoko(elSekunnit) + 'px';
+        }
+
+        paivitaKello();
+        window.addEventListener('resize', paivitaKello);
+        setInterval(paivitaKello, 1000);
+    </script>
+</body>
+</html>
